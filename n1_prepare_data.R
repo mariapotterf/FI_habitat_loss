@@ -9,7 +9,7 @@
 # Steps - develop over individual scripts
 
 
-# Aim: evelop the input data for Pihla for following processing 
+# Aim: develop the input data for Pihla for following processing 
 
 # Create tile for the forest age: 2015 - make a raster mosaics from tiles
 #   download data from LUKE: 
@@ -39,7 +39,7 @@ library(terra)  # for raster processing
 
 
 
-# Read files
+# Read files to UNZIP 
 setwd('C:/Users/ge45lep/Documents/2022_disturba_Finland/')
 
 # 
@@ -54,7 +54,8 @@ walk(ls_zip, ~ unzip(zipfile = str_c(in_zip, .x),
                          exdir = str_c(out_zip, .x)))
 
 
-# Read all new raster files, stored in the subdirectories
+# Read all new RASTER files, stored in the subdirectories
+setwd('C:/Users/ge45lep/Documents/2022_disturba_Finland/raw/age_tif/')
 ls_tiff <- list.files(out_zip, pattern = ".tif$", recursive = TRUE)  # recursive = True goes into subdirectories
 
 # Read data as rasters
@@ -62,9 +63,58 @@ ls_rst <- lapply(ls_tiff, rast)
 
 
 # Create a raster mosaic of all the rasters:
+# first read and plot individual raster
+# loop throught rasters 
 # merge the tiles: from the LUKE map, the tiles are 3*12:
-r1 <- rast(paste(out_zip, 'ika_vmi1x_1216_L3.tif.zip/ika_vmi1x_1216_L3.tif', sep = ''))
+# r1 <- rast(paste(out_zip, 'ika_vmi1x_1216_L3.tif.zip/ika_vmi1x_1216_L3.tif', sep = ''))
+
+# Read all files as rasters
+ls_rst <-   lapply(ls_tiff, function(x, ...) rast(paste(out_zip, x, sep = '')))
+
+
+# Place the rasters as tiles
 
 
 
-r1 <- rast('ika_vmi1x_1216_S4.tif.zip/ika_vmi1x_1216_S4.tif')
+# Make my example?
+# Create a new temporary virtual rasters
+vrtfile2 <- paste0(tempfile(), ".vrt")
+
+# Read the tiles into the raster
+v2 <- vrt(ls_tiff, vrtfile2) 
+head(readLines(vrtfile2)) 
+v2
+
+plot(v2)
+
+library(dplyr)
+df %>% 
+  filter(year > 2014)
+
+
+
+# ----------------------------------
+#     Dummy examples                    
+# ----------------------------------
+
+
+
+
+# Test a dummy example how to make it: what is a virtual raster?
+# how to storre raster tiles?
+
+r <- rast(ncols=100, nrows=100) 
+values(r) <- 1:ncell(r) 
+x <- rast(ncols=2, nrows=2) 
+filename <- paste0(tempfile(), "_.tif") 
+ff <- makeTiles(r, x, filename) 
+ff
+
+vrtfile <- paste0(tempfile(), ".vrt")
+
+v <- vrt(ff, vrtfile) 
+head(readLines(vrtfile)) 
+v
+
+
+
