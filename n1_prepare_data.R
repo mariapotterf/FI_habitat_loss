@@ -33,16 +33,15 @@
 #   export as single raster: try to shhring down the size
 
 library(tidyverse)  # to unzip all files 
-
-
 library(terra)  # for raster processing
+library(lubridate)
 
 
-
-# Read files to UNZIP 
+# Read files to UNZIP -------------------------------------
 setwd('C:/Users/ge45lep/Documents/2022_disturba_Finland/')
 
-# 
+
+# paths to folders
 in_zip  = paste(getwd(), 'raw/FI_age_2015/2015/', sep = '/')
 out_zip = 'C:/Users/ge45lep/Documents/2022_disturba_Finland/raw/age_tif/'
 
@@ -54,13 +53,14 @@ walk(ls_zip, ~ unzip(zipfile = str_c(in_zip, .x),
                          exdir = str_c(out_zip, .x)))
 
 
-# Read all new RASTER files, stored in the subdirectories
+# Read all new RASTER files, stored in the subdirectories ---------------------------
 setwd('C:/Users/ge45lep/Documents/2022_disturba_Finland/raw/age_tif/')
+
+
+# Read disturbance raster to resample the forest raster accordingly
+dist <- rast("C:/Users/ge45lep/Documents/2022_disturba_Finland/raw/finland/finland/disturbance_year_1986-2020_finland.tif")
+
 ls_tiff <- list.files(out_zip, pattern = ".tif$", recursive = TRUE)  # recursive = True goes into subdirectories
-
-# Read data as rasters
-ls_rst <- lapply(ls_tiff, rast)
-
 
 # Create a raster mosaic of all the rasters:
 # first read and plot individual raster
@@ -68,28 +68,55 @@ ls_rst <- lapply(ls_tiff, rast)
 # merge the tiles: from the LUKE map, the tiles are 3*12:
 # r1 <- rast(paste(out_zip, 'ika_vmi1x_1216_L3.tif.zip/ika_vmi1x_1216_L3.tif', sep = ''))
 
-# Read all files as rasters
+# Read all files as rasters ! No needed to create a virtual raster!!
 ls_rst <-   lapply(ls_tiff, function(x, ...) rast(paste(out_zip, x, sep = '')))
 
 
-# Place the rasters as tiles
+# Place the rasters as tiles in virtual raster -------------------------------------
 
-
-
-# Make my example?
-# Create a new temporary virtual rasters
+# Create a temporary file to store virtual raster; just a file name
 vrtfile2 <- paste0(tempfile(), ".vrt")
 
-# Read the tiles into the raster
-v2 <- vrt(ls_tiff, vrtfile2) 
-head(readLines(vrtfile2)) 
-v2
+# Read the tiles into the raster = make a virtual raster
+v <- vrt(ls_tiff,   # strings to individual files 
+          vrtfile2, overwrite = T)  # string name of teh new file
 
+head(readLines(vrtfile2)) 
+v
+
+# see the raster 
 plot(v2)
 
-library(dplyr)
-df %>% 
-  filter(year > 2014)
+
+# duplicate the raster to make a projections and change the CRS
+dist_3067 <- dist
+crs(dist_3067) <- 'epsg:3067'
+
+
+# Resample v2 to 30x30, use bilinear 
+v30 <- resample(v, dist_3067, method = 'bilinear') 
+
+# Process virtual forest raster into the same CRS and resolution as disturbance data
+# Change disturbance data into forest data crs: 3067 for Finland
+# dist_3067 <- project(x = dist,  # which raster to transform
+#                      crs = 'EPSG:3067',
+#                      #y = v2,    # template for projection
+#                      method = 'near'  # new raster values are based on nearest neighbr values, good for categorical data, bilinear is ok for continuous data
+#                      )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -117,4 +144,23 @@ head(readLines(vrtfile))
 v
 
 
+
+
+
+
+
+# resample raster
+
+r <- rast(nrows=3, ncols=3, xmin=0, xmax=10, ymin=0, ymax=10) 
+values(r) <- 1:ncell(r) 
+s <- rast(nrows=25, ncols=30, xmin=1, xmax=11, ymin=-1, ymax=11) 
+x <- resample(r, s, method="bilinear") 
+
+
+opar <- par(no.readonly =TRUE) 
+par(mfrow=c(1,2)) 
+plot(r) 
+plot(x) 
+
+par(opar)
 
