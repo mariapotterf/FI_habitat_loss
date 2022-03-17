@@ -17,9 +17,17 @@
 # Analyse the disturbance data - Finland from Cornelius:
 #   dopwnload from: https://zenodo.org/record/4746129#.YjCu5zGZMuU
 # analyse them by the grid of different size? I suggest yes
+# or split it over administrative regions
 # Make a script to get the hexagons over FI
-#       12 km size
+#       12 km size (start with 50 km)
 # get map for FI
+# 
+
+
+
+# Desired output:
+# database of disturbed patches: year, age, zonation value
+# database of undisturbed forests: random pick of location, to be able to compare it 
 
 
 
@@ -33,7 +41,7 @@
 #   export as single raster: try to shhring down the size
 
 library(tidyverse)  # to unzip all files 
-library(terra)  # for raster processing
+library(terra)      # for raster processing
 library(lubridate)
 
 
@@ -106,17 +114,58 @@ v30 <- resample(v, dist_3067, method = 'bilinear')
 
 
 
+# How to handle virtual raster: do I need to merge the data into one large file or not?
+# simply try to clip it with hexagons and see
+
+
+# get FI shp from natural earth data    -----------------------------------------
+# Create large grid
+# clip with disturbance maps??
+
+
+library(rnaturalearth) # for map data
+library(sf)
+
+
+# get and  country data
+fi_sf <- ne_states(country = "finland", 
+                   returnclass = "sf")
+
+
+st_crs(fi_sf)
+
+# Check projection:
+st_crs(fi_sf)$proj4string
+st_crs(v2)$proj4string
+
+
+# Make sure they have the same projection: 3037, Finnish projection
+fi_sf <- st_transform(fi_sf,  st_crs(v2))
+
+# Create a hexagonal grid covering the Finland
+g = st_make_grid(fi_sf, 
+                 cellsize = 50000,  # 50 km, value is in meters
+                 square = FALSE)  # make hexagon, not square
+
+plot(g)
+plot(fi_sf, add = T)
+
+st_crs(g)$proj4string  # seems that projection is correct
+
+
+
+# How to evaluate the disturbance map? ------------------------------------------
+# Keep only years from 2018, replace by NA
+dist14 <- dist_3067
+values(dist14)[values(dist14) < 2014 ] <- NA
+
+
+writeRaster(dist14, 'dist14_3067.tiff', overwrite=TRUE)
 
 
 
 
-
-
-
-
-
-
-
+# Try if possible to extract values from virtual grid
 
 
 
