@@ -165,7 +165,9 @@ writeRaster(dist14, 'dist14_3067.tiff', overwrite=TRUE)
 
 
 
-# Try if possible to extract values from virtual grid
+# Try if possible to extract values from virtual grid: forest age?
+
+
 
 
 
